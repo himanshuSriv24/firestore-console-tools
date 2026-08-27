@@ -1,0 +1,17 @@
+{
+  "name": "firestore-console-tools",
+  "version": "1.5.0",
+  "private": true,
+  "description": "Read-only Chrome extension adding list search and full-document JSON copy to the Firebase Firestore console",
+  "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "build:zip": "npm run icons && npm run build && cd dist && zip -r ../firestore-console-tools.zip . && cd .. && echo '✓ firestore-console-tools.zip ready'"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.42",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
+  }
+}
