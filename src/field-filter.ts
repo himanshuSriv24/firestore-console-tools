@@ -1,5 +1,6 @@
 import { SELECTORS, ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
 import { DocumentExpander } from "./document-expander";
+import { Theme } from "./theme";
 
 const HIDDEN_ATTRIBUTE = "data-fct-hidden";
 const DEBOUNCE_MS = 120;
@@ -37,6 +38,10 @@ export class FieldFilter {
     this.mount(panel);
   }
 
+  refresh(): void {
+    this.reset();
+  }
+
   private reset(): void {
     this.clearHidden();
 
@@ -61,8 +66,8 @@ export class FieldFilter {
       position: "sticky",
       top: "0",
       zIndex: "10",
-      backgroundColor: this.resolveBackground(panel),
-      borderBottom: "1px solid rgba(128,128,128,0.15)",
+      backgroundColor: Theme.surfaceOf(panel),
+      borderBottom: `1px solid ${Theme.dividerColour()}`,
     });
 
     const input = document.createElement("input");
@@ -78,9 +83,9 @@ export class FieldFilter {
       boxSizing: "border-box",
       padding: "6px 12px",
       fontSize: "13px",
-      border: "1px solid rgba(128,128,128,0.3)",
+      border: `1px solid ${Theme.borderColour()}`,
       borderRadius: "20px",
-      background: "rgba(128,128,128,0.08)",
+      background: Theme.subtleTint(),
       color: "inherit",
       outline: "none",
     });
@@ -90,19 +95,19 @@ export class FieldFilter {
 
     Object.assign(count.style, {
       fontSize: "11px",
-      color: "rgba(128,128,128,0.75)",
+      color: Theme.mutedText(),
       whiteSpace: "nowrap",
       fontVariantNumeric: "tabular-nums",
     });
 
     input.addEventListener("focus", () => {
-      input.style.borderColor = "#8ab4f8";
-      input.style.background = "rgba(138,180,248,0.06)";
+      input.style.borderColor = Theme.accent();
+      input.style.background = Theme.accentTint(0.06);
     });
 
     input.addEventListener("blur", () => {
-      input.style.borderColor = "rgba(128,128,128,0.3)";
-      input.style.background = "rgba(128,128,128,0.08)";
+      input.style.borderColor = Theme.borderColour();
+      input.style.background = Theme.subtleTint();
     });
 
     input.addEventListener("input", () => this.schedule());
@@ -129,17 +134,6 @@ export class FieldFilter {
     this.count = count;
 
     log("Field filter mounted.");
-  }
-
-  private resolveBackground(panel: HTMLElement): string {
-    const background = window.getComputedStyle(panel).backgroundColor;
-
-    const isTransparent =
-      !background ||
-      background === "transparent" ||
-      background === "rgba(0, 0, 0, 0)";
-
-    return isTransparent ? "#1f1f1f" : background;
   }
 
   private schedule(): void {

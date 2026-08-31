@@ -1,5 +1,6 @@
 import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
 import { QueryView } from "./query-view";
+import { Theme } from "./theme";
 
 const SCAN_BUDGET_MS = 3000;
 const DEEP_SCAN_BUDGET_MS = 15000;
@@ -10,10 +11,6 @@ const FALLBACK_ITEM_HEIGHT = 32;
 
 // The console encodes a data path as ~2F-separated segments after /data/.
 const PATH_SEPARATOR = "~2F";
-
-const ACCENT_COLOUR = "#8ab4f8";
-const ACCENT_TINT = "rgba(138,180,248,0.08)";
-const ACCENT_TINT_HOVER = "rgba(138,180,248,0.16)";
 
 // One filter per list panel. The console renders these lists through a CDK
 // virtual scroller, so only the visible rows exist in the DOM — names are
@@ -28,7 +25,7 @@ export class PanelListFilter {
   private input: HTMLInputElement | null = null;
   private overlay: HTMLElement | null = null;
   private rowObserver: MutationObserver | null = null;
-  private background = "#1f1f1f";
+  private background = "";
   private scanned = false;
   private scanning = false;
   private scanTruncated = false;
@@ -43,7 +40,7 @@ export class PanelListFilter {
     if (!scrollable?.parentElement) return false;
 
     this.panelIndex = index;
-    this.background = this.resolveBackground();
+    this.background = Theme.surfaceOf(this.panel);
     this.harvest();
     this.buildInput(scrollable);
     this.buildOverlay();
@@ -82,17 +79,6 @@ export class PanelListFilter {
     return this.wrapper?.isConnected === true;
   }
 
-  private resolveBackground(): string {
-    const panelBackground = window.getComputedStyle(this.panel).backgroundColor;
-
-    const isTransparent =
-      !panelBackground ||
-      panelBackground === "transparent" ||
-      panelBackground === "rgba(0, 0, 0, 0)";
-
-    return isTransparent ? "#1f1f1f" : panelBackground;
-  }
-
   private buildInput(scrollable: HTMLElement): void {
     const wrapper = document.createElement("div");
     wrapper.setAttribute(MARKER_ATTRIBUTE, "filter-wrapper");
@@ -105,7 +91,7 @@ export class PanelListFilter {
       top: "0",
       zIndex: "10",
       backgroundColor: this.background,
-      borderBottom: "1px solid rgba(128,128,128,0.15)",
+      borderBottom: `1px solid ${Theme.dividerColour()}`,
     });
 
     const input = document.createElement("input");
@@ -123,21 +109,21 @@ export class PanelListFilter {
       boxSizing: "border-box",
       padding: "6px 12px",
       fontSize: "13px",
-      border: "1px solid rgba(128,128,128,0.3)",
+      border: `1px solid ${Theme.borderColour()}`,
       borderRadius: "20px",
-      background: "rgba(128,128,128,0.08)",
+      background: Theme.subtleTint(),
       color: "inherit",
       outline: "none",
     });
 
     input.addEventListener("focus", () => {
-      input.style.borderColor = ACCENT_COLOUR;
-      input.style.background = "rgba(138,180,248,0.06)";
+      input.style.borderColor = Theme.accent();
+      input.style.background = Theme.accentTint(0.06);
     });
 
     input.addEventListener("blur", () => {
-      input.style.borderColor = "rgba(128,128,128,0.3)";
-      input.style.background = "rgba(128,128,128,0.08)";
+      input.style.borderColor = Theme.borderColour();
+      input.style.background = Theme.subtleTint();
     });
 
     input.addEventListener("input", () => {
@@ -308,7 +294,7 @@ export class PanelListFilter {
     if (this.canQueryDocuments(query)) {
       const actions = document.createElement("div");
       actions.setAttribute(MARKER_ATTRIBUTE, "filter-actions");
-      actions.style.borderBottom = "1px solid rgba(128,128,128,0.2)";
+      actions.style.borderBottom = `1px solid ${Theme.dividerColour()}`;
 
       actions.appendChild(this.buildPrefixRow(query, style));
 
@@ -351,7 +337,7 @@ export class PanelListFilter {
       padding: "12px 16px",
       fontSize: "12px",
       lineHeight: "1.5",
-      color: "rgba(128,128,128,0.7)",
+      color: Theme.mutedText(),
       whiteSpace: "normal",
       wordBreak: "break-word",
     });
@@ -371,9 +357,9 @@ export class PanelListFilter {
     Object.assign(row.style, {
       padding: "10px 16px",
       fontSize: "12px",
-      color: ACCENT_COLOUR,
+      color: Theme.accent(),
       cursor: "pointer",
-      borderTop: "1px solid rgba(128,128,128,0.15)",
+      borderTop: `1px solid ${Theme.dividerColour()}`,
     });
 
     row.textContent = `Searched ${this.names.size} loaded ${this.kind} — scan further`;
@@ -469,17 +455,20 @@ export class PanelListFilter {
     const row = this.buildRowShell(style);
 
     row.title = content.title;
+    const tint = Theme.accentTint(0.1);
+    const tintHover = Theme.accentTint(0.2);
+
     row.style.gap = "8px";
-    row.style.color = ACCENT_COLOUR;
-    row.style.background = ACCENT_TINT;
+    row.style.color = Theme.accent();
+    row.style.background = tint;
     row.style.paddingLeft = "12px";
 
     row.addEventListener("mouseenter", () => {
-      row.style.background = ACCENT_TINT_HOVER;
+      row.style.background = tintHover;
     });
 
     row.addEventListener("mouseleave", () => {
-      row.style.background = ACCENT_TINT;
+      row.style.background = tint;
     });
 
     const icon = document.createElement("span");
@@ -580,7 +569,7 @@ export class PanelListFilter {
 
     const match = document.createElement("span");
     match.textContent = name.slice(at, at + query.length);
-    match.style.color = ACCENT_COLOUR;
+    match.style.color = Theme.accent();
     match.style.fontWeight = "600";
 
     return [
@@ -609,7 +598,7 @@ export class PanelListFilter {
     });
 
     row.addEventListener("mouseenter", () => {
-      row.style.background = "rgba(255,255,255,0.08)";
+      row.style.background = Theme.hoverTint();
     });
 
     row.addEventListener("mouseleave", () => {

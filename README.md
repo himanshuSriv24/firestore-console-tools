@@ -112,6 +112,17 @@ disk on every load). After a rebuild, hit **↺** on the extension card.
 | `src/document-parser.ts` | Fields DOM → plain object |
 | `src/copy-button.ts` | The breadcrumb button and clipboard write |
 | `src/console-watcher.ts` | Re-injects across SPA navigation, ignores our own mutations |
+| `src/theme.ts` | Resolves colours from what the console actually paints, light or dark |
+
+## Theme
+
+The console has light and dark themes and marks neither on the elements we
+inject into. Rather than assume, `src/theme.ts` reads the first painted
+ancestor behind an injected element and uses that as its background, decides
+light-vs-dark from the page's own luminance, and picks the matching accent
+(`#1a73e8` light, `#8ab4f8` dark). Hovers, borders and dividers are neutral
+greys so they read on either. Flipping the theme with the page open remounts
+everything, so nothing keeps stale colours.
 
 ## When the console changes under us
 

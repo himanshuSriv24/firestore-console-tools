@@ -1,6 +1,7 @@
 import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
 import { DocumentExpander } from "./document-expander";
 import { DocumentParser } from "./document-parser";
+import { Theme } from "./theme";
 
 const FEEDBACK_MS = 2000;
 
@@ -10,6 +11,11 @@ export class CopyJsonButton {
 
   private button: HTMLButtonElement | null = null;
   private busy = false;
+
+  refresh(): void {
+    this.button?.remove();
+    this.button = null;
+  }
 
   sync(): void {
     if (this.button?.isConnected) return;
@@ -42,7 +48,7 @@ export class CopyJsonButton {
       fontSize: "12px",
       fontWeight: "500",
       cursor: "pointer",
-      border: "1px solid rgba(255,255,255,0.35)",
+      border: `1px solid ${Theme.borderColour()}`,
       borderRadius: "4px",
       background: "transparent",
       color: "inherit",
@@ -54,13 +60,13 @@ export class CopyJsonButton {
     });
 
     button.addEventListener("mouseenter", () => {
-      button.style.background = "rgba(255,255,255,0.08)";
-      button.style.borderColor = "rgba(255,255,255,0.6)";
+      button.style.background = Theme.hoverTint();
+      button.style.borderColor = Theme.accent();
     });
 
     button.addEventListener("mouseleave", () => {
       button.style.background = "transparent";
-      button.style.borderColor = "rgba(255,255,255,0.35)";
+      button.style.borderColor = Theme.borderColour();
     });
 
     button.addEventListener("click", (event) => {
