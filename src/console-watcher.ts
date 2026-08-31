@@ -1,7 +1,8 @@
 import { MARKER_ATTRIBUTE } from "./console-dom";
+import { Theme } from "./theme";
 
 const DEBOUNCE_MS = 300;
-const URL_POLL_MS = 1000;
+const POLL_MS = 1000;
 
 // The console is a single-page app that rebuilds panels on every navigation, so
 // injection has to be re-attempted continuously. Mutations caused by our own
@@ -9,8 +10,10 @@ const URL_POLL_MS = 1000;
 export class ConsoleWatcher {
   private readonly callback: () => void;
   private observer: MutationObserver | null = null;
+  private themeObserver: MutationObserver | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private lastUrl = location.href;
+  private lastSurface = Theme.fingerprint();
 
   constructor(callback: () => void) {
     this.callback = callback;
@@ -27,13 +30,46 @@ export class ConsoleWatcher {
 
     this.observer.observe(document.body, { childList: true, subtree: true });
 
-    setInterval(() => {
-      if (location.href === this.lastUrl) return;
+    this.watchTheme();
 
-      this.lastUrl = location.href;
+    setInterval(() => {
+      if (location.href !== this.lastUrl) {
+        this.lastUrl = location.href;
+        this.schedule();
+        return;
+      }
+
+      // Backstop for a theme applied by swapping stylesheets, which changes no
+      // attribute the observer below can see.
+      const surface = Theme.fingerprint();
+      if (surface === this.lastSurface) return;
+
+      this.lastSurface = surface;
       this.schedule();
-    }, URL_POLL_MS);
+    }, POLL_MS);
   }
+
+  // A theme toggle rewrites classes and inline styles on the document root
+  // rather than adding or removing nodes, so childList alone never sees it.
+  private watchTheme(): void {
+    this.themeObserver = new MutationObserver(() => {
+      const surface = Theme.fingerprint();
+      if (surface === this.lastSurface) return;
+
+      this.lastSurface = surface;
+      this.schedule();
+    });
+
+    for (const root of [document.documentElement, document.body]) {
+      if (!root) continue;
+
+      this.themeObserver.observe(root, {
+        attributes: true,
+        attributeFilter: ["class", "style", "data-theme", "theme"],
+      });
+    }
+  }
+
 
   private schedule(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);

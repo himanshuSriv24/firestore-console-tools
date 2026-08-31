@@ -22,6 +22,14 @@ export class Theme {
     return this.isDark() ? DARK_SURFACE : LIGHT_SURFACE;
   }
 
+  // Cheap signature of the painted theme, used to notice a toggle.
+  static fingerprint(): string {
+    const root = window.getComputedStyle(document.documentElement).backgroundColor;
+    const body = window.getComputedStyle(document.body).backgroundColor;
+
+    return `${root}|${body}`;
+  }
+
   static isDark(): boolean {
     const luminance = this.luminance(this.pageSurface());
 

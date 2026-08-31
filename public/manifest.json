@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Firestore Console Tools",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Search any Firestore console list, filter a document's fields by key, and copy a whole document as JSON. Read-only — never writes or deletes data.",
   "icons": {
     "16": "icons/icon16.png",

@@ -10,7 +10,7 @@ class FirestoreConsoleTools {
   private readonly filters = new PanelFilterManager();
   private readonly copyButton = new CopyJsonButton();
   private readonly fieldFilter = new FieldFilter();
-  private darkTheme = Theme.isDark();
+  private theme = Theme.fingerprint();
 
   start(): void {
     new ConsoleWatcher(() => this.sync()).start();
@@ -28,16 +28,16 @@ class FirestoreConsoleTools {
   }
 
   private applyThemeChange(): void {
-    const isDark = Theme.isDark();
-    if (isDark === this.darkTheme) return;
+    const theme = Theme.fingerprint();
+    if (theme === this.theme) return;
 
-    this.darkTheme = isDark;
+    this.theme = theme;
 
     this.filters.destroyAll();
     this.fieldFilter.refresh();
     this.copyButton.refresh();
 
-    log(`Theme changed to ${isDark ? "dark" : "light"} — remounting.`);
+    log(`Theme changed to ${Theme.isDark() ? "dark" : "light"} — remounting.`);
   }
 
   private exposeDebugHelper(): void {
