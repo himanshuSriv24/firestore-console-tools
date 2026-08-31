@@ -1,4 +1,4 @@
-import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
+import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, warn } from "./console-dom";
 import { QueryView } from "./query-view";
 import { Theme } from "./theme";
 
@@ -46,8 +46,6 @@ export class PanelListFilter {
     this.buildOverlay();
     this.watchRows();
 
-    log(`Filter mounted on ${this.kind} panel (index ${index}).`);
-
     return true;
   }
 
@@ -77,6 +75,12 @@ export class PanelListFilter {
 
   isMounted(): boolean {
     return this.wrapper?.isConnected === true;
+  }
+
+  // Colours are baked in at mount, so a repaint of the panel behind us means
+  // this filter has to be rebuilt.
+  isThemeStale(): boolean {
+    return this.background !== Theme.surfaceOf(this.panel);
   }
 
   private buildInput(scrollable: HTMLElement): void {
@@ -261,8 +265,6 @@ export class PanelListFilter {
 
       this.scanned = true;
       this.scanning = false;
-
-      log(`Cached ${this.names.size} ${this.kind}.`);
     }
   }
 
@@ -660,7 +662,7 @@ export class PanelListFilter {
       if (this.clickRendered(name)) return;
     }
 
-    log(`Could not reach "${name}" in the ${this.kind} list.`);
+    warn(`Could not reach "${name}" in the ${this.kind} list.`);
   }
 
   private openPrefixQuery(prefix: string): void {
@@ -727,7 +729,9 @@ export class PanelFilterManager {
     }
 
     for (const [panel, filter] of this.filters) {
-      if (!filter.isStale() && filter.isMounted()) continue;
+      if (!filter.isStale() && filter.isMounted() && !filter.isThemeStale()) {
+        continue;
+      }
 
       filter.destroy();
       this.filters.delete(panel);

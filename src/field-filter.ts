@@ -1,4 +1,4 @@
-import { SELECTORS, ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
+import { SELECTORS, ConsoleDom, MARKER_ATTRIBUTE, nextFrame } from "./console-dom";
 import { DocumentExpander } from "./document-expander";
 import { Theme } from "./theme";
 
@@ -18,6 +18,7 @@ export class FieldFilter {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private expanded = false;
   private matches = 0;
+  private background = "";
 
   sync(): void {
     const panel = ConsoleDom.fieldsPanel();
@@ -33,7 +34,16 @@ export class FieldFilter {
       this.expanded = false;
     }
 
-    if (this.wrapper?.isConnected) return;
+    if (this.wrapper?.isConnected && this.background === Theme.surfaceOf(panel)) {
+      return;
+    }
+
+    // reset() also unhides anything an active filter had hidden, which a bare
+    // wrapper swap would strand.
+    if (this.wrapper?.isConnected) {
+      this.reset();
+      this.panel = panel;
+    }
 
     this.mount(panel);
   }
@@ -54,6 +64,8 @@ export class FieldFilter {
   }
 
   private mount(panel: HTMLElement): void {
+    this.background = Theme.surfaceOf(panel);
+
     const wrapper = document.createElement("div");
     wrapper.setAttribute(MARKER_ATTRIBUTE, "field-filter");
 
@@ -66,7 +78,7 @@ export class FieldFilter {
       position: "sticky",
       top: "0",
       zIndex: "10",
-      backgroundColor: Theme.surfaceOf(panel),
+      backgroundColor: this.background,
       borderBottom: `1px solid ${Theme.dividerColour()}`,
     });
 
@@ -132,8 +144,6 @@ export class FieldFilter {
     this.wrapper = wrapper;
     this.input = input;
     this.count = count;
-
-    log("Field filter mounted.");
   }
 
   private schedule(): void {

@@ -1,4 +1,3 @@
-import { log } from "./console-dom";
 import { ConsoleWatcher } from "./console-watcher";
 import { CopyJsonButton } from "./copy-button";
 import { DocumentExpander } from "./document-expander";
@@ -14,9 +13,7 @@ class FirestoreConsoleTools {
 
   start(): void {
     new ConsoleWatcher(() => this.sync()).start();
-    this.exposeDebugHelper();
-
-    log("Loaded.");
+    this.exposeDebugHelpers();
   }
 
   private sync(): void {
@@ -36,16 +33,24 @@ class FirestoreConsoleTools {
     this.filters.destroyAll();
     this.fieldFilter.refresh();
     this.copyButton.refresh();
-
-    log(`Theme changed to ${Theme.isDark() ? "dark" : "light"} — remounting.`);
   }
 
-  private exposeDebugHelper(): void {
+  private exposeDebugHelpers(): void {
     Object.defineProperty(window, "__fctDebug", {
       value: () => new DocumentExpander().describeCollapsedSample(),
+      configurable: true,
+    });
+
+    Object.defineProperty(window, "__fctTheme", {
+      value: () => Theme.describe(),
       configurable: true,
     });
   }
 }
 
-new FirestoreConsoleTools().start();
+// A crash here leaves no UI at all, so it is reported rather than swallowed.
+try {
+  new FirestoreConsoleTools().start();
+} catch (error) {
+  console.error("[Firestore Console Tools] Startup failed:", error);
+}

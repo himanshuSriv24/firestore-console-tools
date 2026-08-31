@@ -109,6 +109,6 @@ export function nextFrame(delayMs = 0): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
-export function log(...args: unknown[]): void {
-  console.log("[Firestore Console Tools]", ...args);
+export function warn(...args: unknown[]): void {
+  console.warn("[Firestore Console Tools]", ...args);
 }

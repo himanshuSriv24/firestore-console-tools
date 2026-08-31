@@ -1,5 +1,4 @@
 import { MARKER_ATTRIBUTE } from "./console-dom";
-import { Theme } from "./theme";
 
 const DEBOUNCE_MS = 300;
 const POLL_MS = 1000;
@@ -12,8 +11,6 @@ export class ConsoleWatcher {
   private observer: MutationObserver | null = null;
   private themeObserver: MutationObserver | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  private lastUrl = location.href;
-  private lastSurface = Theme.fingerprint();
 
   constructor(callback: () => void) {
     this.callback = callback;
@@ -32,31 +29,15 @@ export class ConsoleWatcher {
 
     this.watchTheme();
 
-    setInterval(() => {
-      if (location.href !== this.lastUrl) {
-        this.lastUrl = location.href;
-        this.schedule();
-        return;
-      }
-
-      // Backstop for a theme applied by swapping stylesheets, which changes no
-      // attribute the observer below can see.
-      const surface = Theme.fingerprint();
-      if (surface === this.lastSurface) return;
-
-      this.lastSurface = surface;
-      this.schedule();
-    }, POLL_MS);
+    // A plain tick. Cheaper than trying to predict every way the console can
+    // repaint itself, and the components below decide if anything changed.
+    setInterval(() => this.schedule(), POLL_MS);
   }
 
   // A theme toggle rewrites classes and inline styles on the document root
   // rather than adding or removing nodes, so childList alone never sees it.
   private watchTheme(): void {
     this.themeObserver = new MutationObserver(() => {
-      const surface = Theme.fingerprint();
-      if (surface === this.lastSurface) return;
-
-      this.lastSurface = surface;
       this.schedule();
     });
 

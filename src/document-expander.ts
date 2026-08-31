@@ -1,4 +1,4 @@
-import { SELECTORS, ConsoleDom, nextFrame, log } from "./console-dom";
+import { SELECTORS, ConsoleDom, nextFrame, warn } from "./console-dom";
 
 const MAX_PASSES = 15;
 const MAX_CLICKS = 3000;
@@ -48,7 +48,7 @@ export class DocumentExpander {
     }
 
     if (unresolved > 0) {
-      log(
+      warn(
         `Could not expand ${unresolved} nested field(s) — no disclosure control found.`,
       );
     }

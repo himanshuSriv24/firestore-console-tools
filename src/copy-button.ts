@@ -1,4 +1,4 @@
-import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, log } from "./console-dom";
+import { ConsoleDom, MARKER_ATTRIBUTE, nextFrame, warn } from "./console-dom";
 import { DocumentExpander } from "./document-expander";
 import { DocumentParser } from "./document-parser";
 import { Theme } from "./theme";
@@ -11,6 +11,7 @@ export class CopyJsonButton {
 
   private button: HTMLButtonElement | null = null;
   private busy = false;
+  private accent = "";
 
   refresh(): void {
     this.button?.remove();
@@ -18,7 +19,9 @@ export class CopyJsonButton {
   }
 
   sync(): void {
-    if (this.button?.isConnected) return;
+    if (this.button?.isConnected && this.accent === Theme.accent()) return;
+
+    this.button?.remove();
 
     const fieldsPanel = ConsoleDom.fieldsPanel();
     const crumbs = ConsoleDom.breadcrumbs();
@@ -28,6 +31,7 @@ export class CopyJsonButton {
       return;
     }
 
+    this.accent = Theme.accent();
     this.button = this.build();
 
     crumbs.style.display = "flex";
@@ -96,20 +100,16 @@ export class CopyJsonButton {
 
       if (!data || Object.keys(data).length === 0) {
         this.setLabel("Nothing to copy", FEEDBACK_MS);
-        log("Parsed no fields. Run window.__fctDebug() and share the output.");
+        warn("Parsed no fields. Run window.__fctDebug() and share the output.");
         return;
       }
 
       const json = JSON.stringify(data, null, 2);
       const copied = await this.writeToClipboard(json);
 
-      log(
-        `Copied ${Object.keys(data).length} top-level field(s); expanded ${expansion.clicked} nested branch(es).`,
-      );
-
       if (!copied) {
         this.setLabel("Copy failed", FEEDBACK_MS);
-        log("Clipboard write failed. JSON:", json);
+        warn("Clipboard write failed. JSON:", json);
         return;
       }
 

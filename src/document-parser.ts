@@ -1,4 +1,4 @@
-import { SELECTORS, log } from "./console-dom";
+import { SELECTORS, warn } from "./console-dom";
 
 // Bik documents routinely hold JSON blobs inside string fields; unwrapping them
 // makes the copied output readable. Set to false for a byte-faithful copy.
@@ -16,7 +16,7 @@ export class DocumentParser {
     );
 
     if (trees.length === 0) {
-      log("No top-level fields found in the fields panel.");
+      warn("No top-level fields found in the fields panel.");
       return null;
     }
 

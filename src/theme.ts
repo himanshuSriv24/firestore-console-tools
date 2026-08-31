@@ -10,6 +10,15 @@ export class Theme {
   // Walking up to the first painted ancestor is what keeps an injected strip
   // from cutting a dark band through a light panel.
   static surfaceOf(element: HTMLElement): string {
+    const painted = this.paintedAncestor(element);
+    if (painted) return painted;
+
+    return this.prefersDark() ? DARK_SURFACE : LIGHT_SURFACE;
+  }
+
+  // Never calls surfaceOf: these two would otherwise recurse into each other
+  // when nothing in the tree is painted, and take the whole script down.
+  private static paintedAncestor(element: HTMLElement): string | null {
     let node: HTMLElement | null = element;
 
     while (node) {
@@ -19,23 +28,59 @@ export class Theme {
       node = node.parentElement;
     }
 
-    return this.isDark() ? DARK_SURFACE : LIGHT_SURFACE;
+    return null;
   }
 
-  // Cheap signature of the painted theme, used to notice a toggle.
-  static fingerprint(): string {
-    const root = window.getComputedStyle(document.documentElement).backgroundColor;
-    const body = window.getComputedStyle(document.body).backgroundColor;
+  private static prefersDark(): boolean {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
 
-    return `${root}|${body}`;
+  // Signature of the painted theme. Sampled from a console panel because the
+  // theme is applied below <body>, which stays the same colour either way.
+  static fingerprint(): string {
+    const reference = this.reference();
+
+    return [
+      this.surfaceOf(reference),
+      window.getComputedStyle(reference).color,
+      window.getComputedStyle(document.body).backgroundColor,
+    ].join("|");
+  }
+
+  // The element whose paint actually tracks the console's theme.
+  static reference(): HTMLElement {
+    return (
+      document.querySelector<HTMLElement>('[data-test-id$="-panel"]') ??
+      document.querySelector<HTMLElement>("fire-breadcrumbs") ??
+      document.body
+    );
+  }
+
+  static describe(): Record<string, string | boolean> {
+    const reference = this.reference();
+
+    return {
+      isDark: this.isDark(),
+      accent: this.accent(),
+      referenceTag: reference.tagName.toLowerCase(),
+      referenceSurface: this.surfaceOf(reference),
+      referenceColour: window.getComputedStyle(reference).color,
+      bodySurface: window.getComputedStyle(document.body).backgroundColor,
+      rootSurface: window.getComputedStyle(document.documentElement)
+        .backgroundColor,
+      prefersDark: this.prefersDark(),
+      painted: this.paintedAncestor(reference) ?? "(none found)",
+      fingerprint: this.fingerprint(),
+    };
   }
 
   static isDark(): boolean {
-    const luminance = this.luminance(this.pageSurface());
+    const painted = this.paintedAncestor(this.reference());
+    const luminance = painted === null ? null : this.luminance(painted);
 
     if (luminance !== null) return luminance < 0.5;
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return this.prefersDark();
   }
 
   static accent(): string {
@@ -67,17 +112,6 @@ export class Theme {
 
   static mutedText(): string {
     return "rgba(128,128,128,0.9)";
-  }
-
-  private static pageSurface(): string {
-    for (const element of [document.body, document.documentElement]) {
-      if (!element) continue;
-
-      const colour = window.getComputedStyle(element).backgroundColor;
-      if (this.isPainted(colour)) return colour;
-    }
-
-    return "";
   }
 
   private static isPainted(colour: string): boolean {
