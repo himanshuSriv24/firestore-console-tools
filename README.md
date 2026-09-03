@@ -76,6 +76,48 @@ one. Neither can the panel's funnel filter reach document IDs: it validates
 against real field names and rejects `__name__`. Hence the query-builder URL,
 which is subject to neither.
 
+### Filter a document's fields by key or value
+
+An open document gets a **Filter fields by key or value** box above its field
+list. Type part of a key or of a leaf value; everything that neither matches nor
+contains a match is hidden. A match keeps its whole value on screen, so matching
+a map shows what is inside it. `Esc` clears.
+
+The count on the right reports the two kinds separately — `3 keys · 2 values` —
+because a value hit shows a row whose *key* does not contain what you typed, and
+an unlabelled total makes that look like a bug.
+
+Only leaf fields hold a value: a map's value is its children, so a map is never
+matched on its contents directly, though a match inside one still surfaces it as
+the parent.
+
+Nested keys and values only exist in the DOM once their branch is open, so the
+first search expands the document — the same read-only expansion the copy button
+uses. That means the first keystroke on a large document takes a moment, and the
+document stays expanded afterwards.
+
+The filter is display-only: **Copy JSON** always copies the full document, not
+the filtered view.
+
+### Copy a whole document as JSON
+
+Open a document and click **Copy JSON** in the breadcrumb bar. Every collapsed
+map and array is expanded first, so the copied JSON is the complete document —
+not just the branches you happened to have open.
+
+```json
+{
+  "category": "UTILITY",
+  "config": { "retries": 3, "targets": ["sms", "whatsapp"] },
+  "createdAt": "August 27, 2026 at 7:15:00 AM UTC+5:30"
+}
+```
+
+Timestamps, geopoints and references come out as the string the console
+displays, because that is all the rendered DOM holds. String fields containing
+stringified JSON are unwrapped for readability — flip `PARSE_STRINGIFIED_JSON`
+in `src/document-parser.ts` if you want the raw string.
+
 ## Safety
 
 The reason this is a frontend-only extension is that it must not be able to
