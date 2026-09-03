@@ -17,7 +17,8 @@ export class FieldFilter {
   private count: HTMLElement | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private expanded = false;
-  private matches = 0;
+  private keyMatches = 0;
+  private valueMatches = 0;
   private background = "";
 
   sync(): void {
@@ -85,7 +86,7 @@ export class FieldFilter {
     const input = document.createElement("input");
     input.setAttribute(MARKER_ATTRIBUTE, "field-filter-input");
     input.type = "text";
-    input.placeholder = "Filter fields by key…";
+    input.placeholder = "Filter fields by key or value…";
     input.autocomplete = "off";
     input.spellcheck = false;
 
@@ -178,7 +179,8 @@ export class FieldFilter {
     if (current !== query) return;
 
     this.clearHidden();
-    this.matches = 0;
+    this.keyMatches = 0;
+    this.valueMatches = 0;
 
     const needle = query.toLowerCase();
 
@@ -186,20 +188,45 @@ export class FieldFilter {
       this.filterTree(tree, needle);
     }
 
-    this.setCount(
-      this.matches === 0
-        ? "no matches"
-        : `${this.matches} ${this.matches === 1 ? "field" : "fields"}`,
-    );
+    this.setCount(this.summariseMatches());
+  }
+
+  // Value hits are counted separately: the key on screen will not contain what
+  // was typed, so an unlabelled total looks like a row that should not be there.
+  private summariseMatches(): string {
+    const parts: string[] = [];
+
+    if (this.keyMatches > 0) {
+      parts.push(`${this.keyMatches} ${this.keyMatches === 1 ? "key" : "keys"}`);
+    }
+
+    if (this.valueMatches > 0) {
+      parts.push(
+        `${this.valueMatches} ${this.valueMatches === 1 ? "value" : "values"}`,
+      );
+    }
+
+    return parts.length === 0 ? "no matches" : parts.join(" · ");
   }
 
   private filterTree(tree: HTMLElement, needle: string): boolean {
     const children = this.childTrees(tree);
 
-    if (this.ownKey(tree).toLowerCase().includes(needle)) {
-      this.matches++;
+    const keyMatch = this.ownKey(tree).toLowerCase().includes(needle);
 
-      // A matched key keeps its whole value visible.
+    // Only leaf fields hold a value; a map's value is its children, which are
+    // matched on their own terms as the walk recurses.
+    const valueMatch =
+      !keyMatch && this.ownValue(tree).toLowerCase().includes(needle);
+
+    if (keyMatch || valueMatch) {
+      if (keyMatch) {
+        this.keyMatches++;
+      } else {
+        this.valueMatches++;
+      }
+
+      // A match keeps its whole value visible.
       this.revealSubtree(tree);
 
       return true;
@@ -241,6 +268,16 @@ export class FieldFilter {
     );
 
     return key?.textContent?.trim() ?? "";
+  }
+
+  private ownValue(tree: HTMLElement): string {
+    const node = tree.querySelector<HTMLElement>(`:scope > ${SELECTORS.node}`);
+
+    const value = node?.querySelector<HTMLElement>(
+      `:scope > ${SELECTORS.nodeClickTarget} ${SELECTORS.nodeLeafValue}`,
+    );
+
+    return value?.textContent?.trim() ?? "";
   }
 
   private hide(tree: HTMLElement): void {
